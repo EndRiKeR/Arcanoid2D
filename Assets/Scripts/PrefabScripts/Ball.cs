@@ -1,17 +1,19 @@
-using Unity.Collections;
-using UnityEditor;
+using System;
 using UnityEngine;
 
-namespace Arkanoid2D
+namespace Arkanoid2D.PrefabScripts
 {
     public class Ball : MonoBehaviour
     {
         [field: SerializeField]
-        public float Speed { get; private set; }
-
-        [field: SerializeField]
         public float Angle { get; set; }
+        
+        [SerializeField]
+        private Collider2D _collider;
 
+        [SerializeField]
+        private Rigidbody2D _rigidbody;
+        
         public Vector2 Position
         {
             get => _rigidbody.position;
@@ -19,16 +21,11 @@ namespace Arkanoid2D
         }
 
         public Bounds Bounds => _collider.bounds;
+        public event Action DeadBall;
 
-        [SerializeField]
-        private Collider2D _collider;
-
-        [SerializeField]
-        private Rigidbody2D _rigidbody;
-
-        public void UpdatePosition(float deltaTime)
+        public void UpdatePosition(float speed, float deltaTime)
         {
-            Position += AngleToVector(Angle) * Speed * deltaTime;
+            Position += AngleToVector(Angle) * speed * deltaTime;
         }
 
         public void Follow(Transform target)
@@ -39,14 +36,17 @@ namespace Arkanoid2D
 
         private void OnCollisionEnter2D(Collision2D other)
         {
-            ProcessCollision(this, other);
-        }
-        
-        public void ProcessCollision(Ball ball, Collision2D collision)
-        {
-            ProcessBounce(ball, collision);
+            Debug.Log($"EnterCollision {other.gameObject.name}");
+            
+            if (other.gameObject.TryGetComponent(out DeadZone dead))
+            {
+                DeadBall?.Invoke();
+                return;
+            }
+            
+            ProcessBounce(this, other);
 
-            if (collision.gameObject.TryGetComponent(out Block block))
+            if (other.gameObject.TryGetComponent(out Block block))
                 block.HitBlock();
         }
 
@@ -59,8 +59,8 @@ namespace Arkanoid2D
             {
                 if (ShouldIgnoreCarriageCollision(ball, normal))
                 {
-                    Physics2D.IgnoreCollision(collision.collider, collision.otherCollider);
-                    return;
+                    //Physics2D.IgnoreCollision(collision.collider, collision.otherCollider);
+                    //return;
                 }
 
                 float steerFactor = -1 * (ball.Position.x - carriage.Position.x) / carriage.Bounds.extents.x;
