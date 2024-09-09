@@ -12,3 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1a6c0b728874e3bbd79a9a64f3ccf09, type: 3}
   m_Name: SpriteConfig
   m_EditorClassIdentifier: 
+  One: {fileID: -476945757, guid: bba80a7a10e468249bcf9d448889d521, type: 3}
+  Two: {fileID: -1509043976, guid: bba80a7a10e468249bcf9d448889d521, type: 3}
+  Three: {fileID: 1251063586, guid: bba80a7a10e468249bcf9d448889d521, type: 3}
+  Four: {fileID: 1504462209, guid: bba80a7a10e468249bcf9d448889d521, type: 3}
+  Five: {fileID: 428960074, guid: bba80a7a10e468249bcf9d448889d521, type: 3}
+  None: {fileID: 0}
+  Shield: {fileID: 0}
+  DoubleDamage: {fileID: 0}

@@ -1,4 +1,3 @@
-using System;
 using Arkanoid2D.Configs;
 using Arkanoid2D.PrefabScripts;
 using UnityEngine;
@@ -7,11 +6,6 @@ namespace Arkanoid2D.Game
 {
     public class GameState : MonoBehaviour
     {
-        public event Action InitGameEvent;
-        public event Action WaitForMoveGameEvent;
-        public event Action ScorePointsGameEvent;
-        public event Action EndGameEvent;
-        
         [Header("Services")]
         [SerializeField]
         private HealthService _healthService;
@@ -20,6 +14,12 @@ namespace Arkanoid2D.Game
         [Header("Configs")]
         [SerializeField]
         private GameConfig _gameConfig;
+        
+        [SerializeField]
+        private SpriteConfig _spritesConfig;
+        
+        [SerializeField]
+        private BlocksPrefabsConfig _blocksPrefabsConfig;
         
         [Space]
         [Header("Base Objects")]
@@ -32,6 +32,12 @@ namespace Arkanoid2D.Game
         [SerializeField]
         private Collider2D _field;
 
+        [SerializeField]
+        private GameEndScreenView _gameEndScreenView;
+        
+        [SerializeField]
+        private GameInitScreenView _gameInitScreenView;
+
         [Space]
         [Header("Flags")]
         public bool IsNeedInit = true;
@@ -39,10 +45,15 @@ namespace Arkanoid2D.Game
         
         void Awake()
         {
-            _healthService.GainHealth(_gameConfig.PlayerHealth);
+            _gameEndScreenView.Hide();
+            _gameInitScreenView.Show();
             
             _ball.DeadBall += BallDead;
-            // add UI
+            
+            _healthService.OnGainHealth += _carriage.UpdateHeartIcon;
+            _healthService.OnLoseHealth += _carriage.UpdateHeartIcon;
+            
+            _gameEndScreenView.Button.onClick.AddListener(RestartGame);
         }
 
         void FixedUpdate()
@@ -51,19 +62,38 @@ namespace Arkanoid2D.Game
                 InitGame();
 
             UpdateGame();
-        
+
             if (CheckGameEnd())
                 EndGame();
+        }
+
+        private bool CheckGameEnd()
+        {
+            bool IsHealthRunOut = _healthService.Health == 0;
+            bool IsAllBlocksDestroyed = _field.GetComponentsInChildren<Block>().Length == 0;
+            return IsHealthRunOut || IsAllBlocksDestroyed;
         }
 
         private void InitGame()
         {
             IsNeedInit = false;
 
+            _healthService.GainHealth(_gameConfig.PlayerHealth);
+
             _ball.transform.position = _carriage.BallPosition;
             _ball.Angle = _gameConfig.DefBallAngle;
+
+            var points = _field.GetComponentsInChildren<SpawnPoint>();
+            foreach (var point in points)
+            {
+                Instantiate(_blocksPrefabsConfig.GetRandomPrefab(), point.transform);
+            }
             
-            InitGameEvent?.Invoke();
+            var blocks = _field.GetComponentsInChildren<Block>();
+            foreach (var block in blocks)
+            {
+                block.InitBlock(_spritesConfig);
+            }
         }
     
         private void UpdateGame()
@@ -71,36 +101,67 @@ namespace Arkanoid2D.Game
             UpdateCarriagePosition();
             UpdateBallPosition();
         }
-    
-        private bool CheckGameEnd() => _healthService.Health == 0;
 
         private void EndGame()
         {
-            EndGameEvent?.Invoke();
+            if (_healthService.Health == 0)
+                _gameEndScreenView.Show("DEFEAT");
+            else
+                _gameEndScreenView.Show("WIN!");
+            
+            IsBallOnCarriage = true;
+            _ball.transform.position = _carriage.BallPosition;
+            _ball.Angle = _gameConfig.DefBallAngle;
+        }
+        
+        private void RestartGame()
+        {
+            _gameEndScreenView.Hide();
+            _gameInitScreenView.Show();
+            
+            var points = _field.GetComponentsInChildren<BlocksHolder>();
+            foreach (var point in points)
+            {
+                Destroy(point.gameObject);
+            }
+
+            IsNeedInit = true;
+            IsBallOnCarriage = true;
         }
 
         private void OnDestroy()
         {
             _ball.DeadBall -= BallDead;
             
-            // delete UI
+            _healthService.OnGainHealth -= _carriage.UpdateHeartIcon;
+            _healthService.OnLoseHealth -= _carriage.UpdateHeartIcon;
+            
+            _gameEndScreenView.Button.onClick.RemoveAllListeners();
         }
 
         private void UpdateCarriagePosition()
         {
             if (Input.GetKey(KeyCode.LeftArrow))
-                    _carriage.Position += Vector2.left * _gameConfig.DefCarriageSpeed;
+                _carriage.Position += Vector2.left * _gameConfig.DefCarriageSpeed;
             
             if (Input.GetKey(KeyCode.RightArrow))
                 _carriage.Position += Vector2.right * _gameConfig.DefCarriageSpeed;
 
-            ClampCarriagePosition();
+            float carriageMax = _carriage.Position.x + _carriage.Bounds.extents.x;
+            float carriageMin = _carriage.Position.x - _carriage.Bounds.extents.x;
             
+            float fieldMax = _field.bounds.max.x;
+            float fieldMin = _field.bounds.min.x;
+            
+            if (carriageMax > fieldMax)
+                _carriage.Position = new Vector2(fieldMax - _carriage.Bounds.extents.x, _carriage.Position.y);
+            else if (carriageMin < fieldMin)
+                _carriage.Position = new Vector2(fieldMin + _carriage.Bounds.extents.x, _carriage.Position.y);
         }
 
         private void UpdateBallPosition()
         {
-            if (Input.GetKey(KeyCode.Space))
+            if (Input.GetKey(KeyCode.UpArrow))
             {
                 IsBallOnCarriage = false;
             }
@@ -123,22 +184,6 @@ namespace Arkanoid2D.Game
             _ball.Angle = _gameConfig.DefBallAngle;
             
             _healthService.LoseHealth();
-            
-            WaitForMoveGameEvent?.Invoke();
-        }
-        
-        private void ClampCarriagePosition()
-        {
-            float carriageHalfSize = _carriage.Bounds.extents.x;
-            float carriageMax = _carriage.Position.x + carriageHalfSize;
-            float fieldMax = _field.bounds.max.x;
-            float carriageMin = _carriage.Position.x - carriageHalfSize;
-            float fieldMin = _field.bounds.min.x;
-
-            if (carriageMax > fieldMax)
-                _carriage.Position = new Vector2(fieldMax - carriageHalfSize, _carriage.Position.y);
-            else if (carriageMin < fieldMin)
-                _carriage.Position = new Vector2(fieldMin + carriageHalfSize, _carriage.Position.y);
         }
     }
 }

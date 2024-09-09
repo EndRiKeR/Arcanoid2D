@@ -1,7 +1,4 @@
 using System;
-using Arkanoid2D.Configs;
-using Arkanoid2D.PrefabScripts;
-using UnityEditor;
 using UnityEngine;
 
 namespace Arkanoid2D.Game
@@ -10,33 +7,21 @@ namespace Arkanoid2D.Game
     {
         public int Health { get; private set; } = 0;
         
-        public event Action OnGainHealth;
-        public event Action OnLoseHealth;
-
-        void Awake()
-        {
-            //OnGainHealth
-            //OnLoseHealth
-        }
-
-        private void OnDestroy()
-        {
-            //OnGainHealth
-            //OnLoseHealth
-        }
+        public event Action<int> OnGainHealth;
+        public event Action<int> OnLoseHealth;
 
         public void GainHealth(int gain = 1)
         {
             Health += gain;
             
-            OnGainHealth?.Invoke();
+            OnGainHealth?.Invoke(Health);
         }
         
         public void LoseHealth(int lose = 1)
         {
-            Health += lose;
+            Health -= lose;
             
-            OnLoseHealth?.Invoke();
+            OnLoseHealth?.Invoke(Health);
         }
     }
 }

@@ -10,9 +10,6 @@ namespace Arkanoid2D.PrefabScripts
         private int Health { get; set; } = 2;
 
         [SerializeField]
-        private Bonus _bonus;
-
-        [SerializeField]
         private Image _image;
         
         private SpriteConfig _spriteConfig;
@@ -34,9 +31,6 @@ namespace Arkanoid2D.PrefabScripts
         
         private void DestroyBlock()
         {
-            if (_bonus.Type != BonusType.None)
-                Instantiate(_bonus);
-            
             Destroy(gameObject);
         }
 

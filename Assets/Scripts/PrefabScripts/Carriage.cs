@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 
 namespace Arkanoid2D.PrefabScripts
@@ -12,7 +13,7 @@ namespace Arkanoid2D.PrefabScripts
         
         [SerializeField]
         private Transform _ballPos;
-        
+
         public Vector2 Position
         {
             get => transform.position;
@@ -25,5 +26,21 @@ namespace Arkanoid2D.PrefabScripts
         }
 
         public Bounds Bounds => _collider.bounds;
+
+        public void UpdateHeartIcon(int healthValue)
+        {
+            var allHearts = GetComponentsInChildren<HeartIcon>();
+            var needToEnable = allHearts.Take(healthValue);
+            
+            foreach (var heart in allHearts)
+            {
+                heart.IsEnabled = false;
+            }
+            
+            foreach (var heart in needToEnable)
+            {
+                heart.IsEnabled = true;
+            }
+        }
     }
 }

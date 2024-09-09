@@ -40,6 +40,7 @@ namespace Arkanoid2D.PrefabScripts
             
             if (other.gameObject.TryGetComponent(out DeadZone dead))
             {
+                Debug.Log("Death");
                 DeadBall?.Invoke();
                 return;
             }
@@ -57,12 +58,6 @@ namespace Arkanoid2D.PrefabScripts
 
             if (collision.gameObject.TryGetComponent(out Carriage carriage))
             {
-                if (ShouldIgnoreCarriageCollision(ball, normal))
-                {
-                    //Physics2D.IgnoreCollision(collision.collider, collision.otherCollider);
-                    //return;
-                }
-
                 float steerFactor = -1 * (ball.Position.x - carriage.Position.x) / carriage.Bounds.extents.x;
                 steerFactor = Mathf.Clamp(steerFactor, -1f, 1f);
                 float steerAngle = Remap(steerFactor, -1, 1, 10, 170);
